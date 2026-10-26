@@ -1,0 +1,16 @@
+{
+  "name": "呼吸记录",
+  "short_name": "呼吸记录",
+  "description": "记录宠物熟睡时的呼吸次数，家人共享，看趋势。",
+  "lang": "zh-CN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F1F6F6",
+  "theme_color": "#0B7A85",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>呼吸记录</title>
+<meta name="description" content="记录宠物熟睡时的呼吸次数，家人共享，看趋势。">
+<meta name="theme-color" content="#F1F6F6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0B1719" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="呼吸记录">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main class="wrap">
+
+  <!-- loading -->
+  <section id="viewLoading" class="center small">载入中…</section>
+
+  <!-- sign in -->
+  <section id="viewAuth" hidden>
+    <header class="head">
+      <span class="kicker">SRR · sleeping respiratory rate</span>
+      <h1>呼吸记录</h1>
+      <p class="sub">登录后，家人之间共享记录。</p>
+    </header>
+    <form class="card" id="authForm" novalidate>
+      <div class="field"><label for="email">邮箱</label><input id="email" type="email" autocomplete="username" inputmode="email" required></div>
+      <div class="field"><label for="pw">密码（至少 8 位）</label><input id="pw" type="password" autocomplete="current-password" minlength="8" required></div>
+      <p class="err" id="authErr" role="alert"></p>
+      <div class="gap8">
+        <button class="btn primary" type="submit" id="btnSignIn">登录</button>
+        <button class="btn" type="button" id="btnSignUp">第一次用：注册</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- create or join household -->
+  <section id="viewOnboard" hidden>
+    <header class="head"><h1>设置家庭</h1><p class="sub">第一个人建家庭，另一个人用邀请码加入。</p></header>
+    <form class="card" id="createForm">
+      <h2>建一个家庭</h2>
+      <div class="field"><label for="cPet">宠物名</label><input id="cPet" required maxlength="40" placeholder="例：hoho"></div>
+      <div class="field"><label for="cName">你的名字（家人看到的）</label><input id="cName" required maxlength="20"></div>
+      <button class="btn primary" type="submit">建家庭</button>
+    </form>
+    <form class="card" id="joinForm">
+      <h2>用邀请码加入</h2>
+      <div class="field"><label for="jCode">邀请码</label><input id="jCode" required maxlength="12" autocapitalize="characters" autocomplete="off" class="mono"></div>
+      <div class="field"><label for="jName">你的名字（家人看到的）</label><input id="jName" required maxlength="20"></div>
+      <button class="btn primary" type="submit">加入</button>
+    </form>
+    <p class="err" id="obErr" role="alert"></p>
+    <button class="btn linkish" type="button" id="obSignOut">退出登录</button>
+  </section>
+
+  <!-- main -->
+  <section id="viewMain" hidden>
+    <header class="head row">
+      <div>
+        <span class="kicker">SRR · sleeping respiratory rate</span>
+        <h1 id="title">熟睡呼吸记录</h1>
+      </div>
+      <button class="btn icon" type="button" id="btnSettings" aria-label="设置">
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.4 13a7.5 7.5 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.6 7.6 0 0 0-1.7-1L15 3.5h-4l-.4 2.5a7.6 7.6 0 0 0-1.7 1l-2.4-1-2 3.4L6.6 11a7.5 7.5 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.6 7.6 0 0 0 1.7 1l.4 2.5h4l.4-2.5a7.6 7.6 0 0 0 1.7-1l2.4 1 2-3.4zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z" transform="translate(-1 0)"/></svg>
+      </button>
+    </header>
+
+    <div id="installHint" class="note" hidden>
+      <span>装到主屏幕后打开更快，也能离线保存：Safari 底部的「分享」→「添加到主屏幕」。</span>
+      <button class="btn small-btn" type="button" id="installClose">知道了</button>
+    </div>
+
+    <div id="netBar" class="note" hidden></div>
+    <div id="alert" role="status" aria-live="polite"></div>
+
+    <section class="card" id="today" aria-label="今天"></section>
+
+    <section class="card" aria-labelledby="h-count">
+      <h2 id="h-count">数呼吸</h2>
+      <p class="hint">猫睡熟、不动时再数。胸腹一起一伏算 1 次。</p>
+      <div class="seg" id="modes" role="group" aria-label="记录方式">
+        <button type="button" data-mode="30" aria-pressed="true">30 秒</button>
+        <button type="button" data-mode="60" aria-pressed="false">60 秒</button>
+        <button type="button" data-mode="manual" aria-pressed="false">手动输入</button>
+      </div>
+      <div id="counter" class="field gap10">
+        <button type="button" class="tap" id="tap" aria-label="点一次，记 1 次呼吸">
+          <span class="n" id="tapN">0</span>
+          <span class="l" id="tapL">点这里，开始计时</span>
+        </button>
+        <div class="bar" aria-hidden="true"><i id="barFill"></i></div>
+        <div class="row">
+          <span class="time" id="timeLeft">30 秒</span>
+          <span class="gap8">
+            <button type="button" class="btn" id="undo" disabled>撤销 1 次</button>
+            <button type="button" class="btn" id="reset" disabled>重来</button>
+          </span>
+        </div>
+      </div>
+      <div id="manual" class="manual" hidden>
+        <label for="manualRpm" class="hint">每分钟次数</label>
+        <input id="manualRpm" type="number" inputmode="numeric" min="5" max="150" placeholder="例 24">
+        <span class="hint">次/分</span>
+      </div>
+
+      <div class="save" id="saveBox" hidden>
+        <div class="res"><span class="v" id="resV">0</span><span class="u">次/分</span><span id="resChip"></span></div>
+        <p class="small" id="resHow"></p>
+        <div class="field">
+          <span class="lab">状态</span>
+          <div class="seg two" id="asleepSeg" role="group" aria-label="状态">
+            <button type="button" data-asleep="1" aria-pressed="true">熟睡</button>
+            <button type="button" data-asleep="0" aria-pressed="false">醒着但安静</button>
+          </div>
+          <span class="small">只有「熟睡」的记录用来判断警戒。</span>
+        </div>
+        <div class="field">
+          <label for="note">备注（可不填）</label>
+          <input type="text" id="note" maxlength="120" placeholder="例：睡在猫塔上">
+          <div class="chips" id="noteChips"></div>
+        </div>
+        <details>
+          <summary>改时间（默认是现在）</summary>
+          <div class="field"><label for="when">记录时间</label><input type="datetime-local" id="when"></div>
+        </details>
+        <div class="gap8"><button type="button" class="btn primary" id="save">保存记录</button></div>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="h-trend">
+      <div class="chead">
+        <div><h2 id="h-trend">趋势</h2><p class="small" id="stats"></p></div>
+        <div class="ranges" id="ranges" role="group" aria-label="时间范围">
+          <button type="button" data-r="7" aria-pressed="false">7 天</button>
+          <button type="button" data-r="14" aria-pressed="true">14 天</button>
+          <button type="button" data-r="90" aria-pressed="false">90 天</button>
+          <button type="button" data-r="all" aria-pressed="false">全部</button>
+        </div>
+      </div>
+      <div class="chartbox" id="chartBox"></div>
+      <div class="legend" id="legend"></div>
+    </section>
+
+    <section class="card" aria-labelledby="h-list">
+      <div class="row"><h2 id="h-list">记录</h2><button class="btn" type="button" id="btnShare">分享最近 7 天</button></div>
+      <ul class="list" id="list"></ul>
+      <div class="gap8"><button type="button" class="btn" id="more" hidden>显示全部</button></div>
+    </section>
+
+    <section class="card" aria-labelledby="h-ev">
+      <h2 id="h-ev">事件</h2>
+      <p class="hint">用药开始、换药、就诊。会在趋势图上画成竖线。</p>
+      <ul class="list ev" id="evList"></ul>
+      <form id="evForm" class="evform">
+        <input type="date" id="evDate" required aria-label="日期">
+        <select id="evKind" aria-label="类型">
+          <option value="med_start">开始用药</option>
+          <option value="med_change">换药 / 改剂量</option>
+          <option value="med_stop">停药</option>
+          <option value="vet">就诊</option>
+          <option value="other">其他</option>
+        </select>
+        <input type="text" id="evLabel" maxlength="60" required placeholder="例：クロピドグレル" aria-label="说明">
+        <button class="btn primary" type="submit">添加</button>
+      </form>
+    </section>
+
+    <details class="sos" id="sos">
+      <summary>这些情况，马上联系医院</summary>
+      <ul>
+        <li>张嘴呼吸</li>
+        <li id="sosRate">熟睡时呼吸持续高于警戒值</li>
+        <li>后腿突然无力，或突然大叫</li>
+        <li>晕倒</li>
+        <li>出血</li>
+      </ul>
+      <p class="small" id="sosVet"></p>
+    </details>
+
+    <footer class="small foot">
+      <p>这是记录工具，不是医疗器械，不能诊断。警戒值怎么定，请问兽医。</p>
+    </footer>
+  </section>
+</main>
+
+<!-- settings -->
+<dialog id="settings" aria-labelledby="h-set">
+  <form method="dialog" class="dlg" id="setForm">
+    <div class="row"><h2 id="h-set">设置</h2><button class="btn" value="close" type="submit">关闭</button></div>
+
+    <fieldset>
+      <legend>我</legend>
+      <div class="field"><label for="sName">我的名字</label><input id="sName" maxlength="20"></div>
+      <p class="small" id="sEmail"></p>
+    </fieldset>
+
+    <fieldset>
+      <legend>宠物和警戒值</legend>
+      <div class="field"><label for="sPet">宠物名</label><input id="sPet" maxlength="40"></div>
+      <div class="two-col">
+        <div class="field"><label for="sYellow">黄线（≥ 这个数）</label><input id="sYellow" type="number" inputmode="numeric" min="5" max="150"></div>
+        <div class="field"><label for="sRed">红线（&gt; 这个数）</label><input id="sRed" type="number" inputmode="numeric" min="5" max="150"></div>
+      </div>
+      <p class="small">默认黄 26、红 30。这是记录用的参考线，请按兽医的意见改。</p>
+      <div class="field"><label for="sVet">医院名</label><input id="sVet" maxlength="80"></div>
+      <div class="field"><label for="sVetTel">医院电话</label><input id="sVetTel" type="tel" maxlength="30"></div>
+      <button class="btn primary" type="button" id="sSave">保存</button>
+      <p class="small" id="sMsg" role="status"></p>
+    </fieldset>
+
+    <fieldset>
+      <legend>家人</legend>
+      <ul class="plain" id="sMembers"></ul>
+      <p class="small">邀请码（发给家人，在「用邀请码加入」里填）：</p>
+      <div class="row"><span class="code mono" id="sCode"></span><button class="btn" type="button" id="sCopyCode">复制</button></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Siri 语音记录</legend>
+      <p class="small">用 iPhone 的「快捷指令」App 做一个指令，对 Siri 说指令名就能计时、报数、记录。每个人用自己的令牌，记录会算在自己名下。</p>
+      <ul class="plain" id="tokList"></ul>
+      <button class="btn" type="button" id="tokNew">生成我的令牌</button>
+      <div id="tokBox" hidden class="field">
+        <p class="small"><b>令牌只显示这一次</b>，请马上复制到快捷指令里。不要发给别人；丢了就删掉重新生成。</p>
+        <div class="field"><label>令牌</label><input id="tokVal" readonly class="mono"></div>
+        <div class="field"><label>接口地址</label><input id="tokUrl" readonly class="mono"></div>
+        <div class="gap8"><button class="btn" type="button" id="tokCopy">复制令牌</button><button class="btn" type="button" id="tokCopyUrl">复制地址</button></div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>数据</legend>
+      <div class="gap8">
+        <button class="btn" type="button" id="sExport">导出 CSV</button>
+        <button class="btn" type="button" id="sImportToggle">导入 CSV</button>
+      </div>
+      <div id="importBox" hidden class="field">
+        <label for="importText">粘贴 CSV（第一行是表头：datetime,rpm,method,count,duration_sec,note）</label>
+        <textarea id="importText" rows="5" class="mono"></textarea>
+        <button class="btn primary" type="button" id="sImport">导入</button>
+      </div>
+      <textarea id="copyBox" readonly hidden aria-label="CSV 文本" class="mono" rows="5"></textarea>
+    </fieldset>
+
+    <fieldset>
+      <legend>账号</legend>
+      <button class="btn danger" type="button" id="sSignOut">退出登录</button>
+    </fieldset>
+    <p class="small">版本 <span id="sVer"></span></p>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status" hidden></div>
+<div class="flash" id="flash" hidden></div>
+
+<script src="vendor/supabase.js"></script>
+<script src="config.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
