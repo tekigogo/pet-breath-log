@@ -50,6 +50,7 @@
     if (/Email not confirmed/i.test(m)) return '邮箱还没确认。请让管理员在 Supabase 里关闭「Confirm email」。';
     if (/Password should be|at least/i.test(m)) return '密码至少 8 位。';
     if (/rate limit|too many/i.test(m)) return '操作太频繁，请过一会儿再试。';
+    if (/Database error saving new user|Sign-ups are closed|Signups not allowed/i.test(m)) return '注册已关闭。需要加人时，请让管理员重新打开注册。';
     if (/invalid code/i.test(m)) return '邀请码不对。';
     if (/already in a household/i.test(m)) return '你已经在一个家庭里了。';
     if (/household full/i.test(m)) return '这个家庭人数已满。';
